@@ -2,6 +2,7 @@
 require("dotenv").config();
 const express=require("express");
 const app=express();
+const bodyParser=require("body-parser");
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
@@ -9,12 +10,15 @@ app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
   });
-  app.use(compression());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
 const session = require('express-session');
 const router=require("./controller/user");
 PORT=process.env.PORT||3000;
+const mongoose=require("mongoose");
+mongoose.set('strictQuery', true);
+mongoose.connect(process.env.DATABASE_KEY,{ useNewUrlParser: true }).then(
+  console.log("Connection Successful"));
 app.use(router);
 app.set('view engine', 'ejs');
 app.use(session({
@@ -33,7 +37,11 @@ app.use(passport.session());
 
 app.set('view engine', 'ejs');
 
-app.get('/success', (req, res) => res.send(userProfile.id));
+app.get('/success', (req, res) => 
+{const id= userProfile.id;
+const displayName= userProfile.displayName;
+const email= userProfile.emails;
+res.send({id,displayName,email})});
 app.get('/error', (req, res) => res.send("error logging in"));
 
 passport.serializeUser(function(user, cb) {
