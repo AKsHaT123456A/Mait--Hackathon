@@ -26,7 +26,7 @@ app.use(session({
   saveUninitialized: true,
   secret: 'SECRET' 
 }));
-app.get('/', function(req, res) {
+app.get('/register', function(req, res) {
     res.render('pages/auth');
   });  
 const passport = require('passport');
