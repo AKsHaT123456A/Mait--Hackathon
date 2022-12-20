@@ -5,6 +5,7 @@ const app=express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const messageSchema=require("./model/messageSchema");
+const donorSchema=require("./model/donorSchema");
 const bodyParser=require("body-parser");
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,6 +23,7 @@ const mongoose=require("mongoose");
 mongoose.set('strictQuery', true);
 mongoose.connect(process.env.DATABASE_KEY,{ useNewUrlParser: true }).then(
   console.log("Connection Successful"));
+  var donor=mongoose.model('donor',donorSchema);
 app.use(router);
 app.set('view engine', 'ejs');
 app.use(session({
@@ -65,10 +67,14 @@ app.post('/messages', (req, res) => {
 io.on('connection', () =>{
   console.log('a user is connected')
 })
-app.get('/success', (req, res) => 
+app.get('/success', async(req, res) => 
 {const id= userProfile.id;
 const displayName= userProfile.displayName;
 const email= userProfile.emails;
+const newDonor=new donor({fullname:displayName,email:email});
+await newDonor.save(function(err){
+  if(err){console.log(err)};
+})
 res.send({id,displayName,email})});
 app.get('/error', (req, res) => res.send("error logging in"));
 
