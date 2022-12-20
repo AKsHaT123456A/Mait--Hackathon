@@ -2,6 +2,9 @@
 require("dotenv").config();
 const express=require("express");
 const app=express();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+const messageSchema=require("./model/messageSchema");
 const bodyParser=require("body-parser");
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,7 +39,32 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.set('view engine', 'ejs');
+var Message = mongoose.model('Message',messageSchema);
+app.get('/messages', (req, res) => {
+  Message.find({},(err, messages)=> {
+    res.send(messages);
+  })
+})
 
+app.get('/messages', (req, res) => {
+  Message.find({},(err, messages)=> {
+    res.send(messages);
+  })
+})
+
+app.post('/messages', (req, res) => {
+  var message = new Message(req.body);
+  message.save((err) =>{
+    if(err)
+      sendStatus(500);
+    io.emit('message', req.body);
+    res.sendStatus(200);
+  })
+})
+
+io.on('connection', () =>{
+  console.log('a user is connected')
+})
 app.get('/success', (req, res) => 
 {const id= userProfile.id;
 const displayName= userProfile.displayName;
@@ -59,7 +87,7 @@ const GOOGLE_CLIENT_SECRET = 'our-google-client-secret';
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback"
+    callbackURL: "https://hackapis.onrender.com/auth/google/callback"
   },
   function(accessToken, refreshToken, profile, done) {
       userProfile=profile;
@@ -72,10 +100,25 @@ app.get('/auth/google',
  
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/error' }),
-  function(req, res) {
+  function(req, res,err) {
+    if(err)console.log(err);
     // Successful authentication, redirect success.
     res.redirect('/success');
   });
+  app.get('/messages', (req, res) => {
+    Message.find({},(err, messages)=> {
+      res.send(messages);
+    })
+  })
+  app.post('/messages', (req, res) => {
+    var message = new Message(req.body);
+    message.save((err) =>{
+      if(err)
+        sendStatus(500);
+      res.sendStatus(200);
+    })
+  })
+
 app.listen(PORT,(err)=>{
     if(err)console.log(err);
     else console.log("Server started at "+PORT);
